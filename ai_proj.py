@@ -1,6 +1,6 @@
 import urllib.parse
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 
 """ Formatting Connection String and Creating Engine """
 
@@ -19,23 +19,50 @@ safe_user = urllib.parse.quote_plus(user)
 connection_string = f"postgresql+psycopg2://{safe_user}:{safe_password}@{host}:{port}/{dbname}"
 print(connection_string) # Output will look like: postgresql+psycopg2://my_user:super%40secure%2Fpassword%21@localhost:5432/my_database
 
-# 2. Create the connection engine
+# Create the connection engine
 engine = create_engine(connection_string)
+
+
+
+""" Extracting Schema """
+
+# Create an inspector
+inspector = inspect(engine)
+
+# Print Schema
+print(inspector.get_schema_names())
+
+# Get Table Names
+table_names = inspector.get_table_names()
+
+# Stores Schema
+schema = ""
+
+# Format Schema String
+for table in table_names:
+    schema += (str(table) + "(")
+    # Goes through columns
+    col_str = ""
+    for col in inspector.get_columns(table):
+        col_str += (str(col['name']) + ", ")
+    schema += (col_str[:len(col_str)-2] + "), ")
+schema = schema[:len(schema)-2]
+print(schema)
 
 
 
 """ User Input """
 
-# 3. Write your query
+# Write your query
 query = "SELECT * FROM applicant_race LIMIT 100;"
 
 try:
-    # 4. Extract data directly into a DataFrame
+    # Extract data directly into a DataFrame
     # Using 'with' ensures the connection closes automatically
     with engine.connect() as connection:
         df = pd.read_sql(query, connection)
 
-    # 5. Display the table
+    # Display the table
     print(df.head())
 
 except Exception as e:
