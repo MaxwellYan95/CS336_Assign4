@@ -1,6 +1,11 @@
 import urllib.parse
 import pandas as pd
 from sqlalchemy import create_engine, inspect
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+
+# Load the V2 model specifically
+tokenizer = AutoTokenizer.from_pretrained("juierror/flan-t5-text2sql-with-schema-v2")
+model = AutoModelForSeq2SeqLM.from_pretrained("juierror/flan-t5-text2sql-with-schema-v2")
 
 """ Formatting Connection String and Creating Engine """
 def getConnection() -> str:
@@ -18,10 +23,11 @@ def getConnection() -> str:
     # Construct the string
     return f"postgresql+psycopg2://{safe_user}:{safe_password}@{host}:{port}/{dbname}"
 
-
+# Here's the engine
+engine = create_engine(getConnection())
 
 """ Extracting Schema """
-def getSchema(engine) -> str:
+def getSchema() -> str:
     # Create an inspector
     inspector = inspect(engine)
 
@@ -41,41 +47,19 @@ def getSchema(engine) -> str:
         schema += (col_str[:len(col_str)-2] + "), ")
     return schema[:len(schema)-2]
 
+# Get schema string
+tables = getSchema()
 
+def generate_sql(question):
+    # Construct prompt
+    # Strict Format: "convert tables: <tables> question: <question>"
+    prompt = f"convert tables: {tables} question: {question}"
+    
+    # Generate
+    inputs = tokenizer(prompt, return_tensors="pt")
+    outputs = model.generate(**inputs, max_length=512)
+    return tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-""" User Input """
-def query(engine) -> str:
-    # Write your query
-    query = "SELECT * FROM applicant_race LIMIT 100;"
-
-    try:
-        # Extract data directly into a DataFrame
-        # Using 'with' ensures the connection closes automatically
-        with engine.connect() as connection:
-            df = pd.read_sql(query, connection)
-
-        # Display the table
-        return df.head()
-    except Exception as e:
-        return f"Error connecting to Postgres: {e}"
-
-def main():
-    # Get connection string
-    connect = getConnection()
-    print(f"Connection String: {connect}")
-
-    # Create the connection engine
-    engine = create_engine(connect)
-
-    # Get schema name
-    schema = getSchema(engine)
-    print(f"Schema String: {schema}")
-
-    # Get query
-    queryStr = query(engine)
-    print(f"Query String\n: {queryStr}")
-
-
-
-if __name__ == "__main__":
-    main()
+# Get query
+queryStr = generate_sql("Give me all loans in Mercer County")
+print(f"Query String:\n {queryStr}")
