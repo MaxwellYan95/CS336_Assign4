@@ -1,65 +1,104 @@
 import urllib.parse
-import pandas as pd
 from sqlalchemy import create_engine, inspect
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from llama_cpp import Llama
+from huggingface_hub import hf_hub_download
 
-# Load the V2 model specifically
-tokenizer = AutoTokenizer.from_pretrained("juierror/flan-t5-text2sql-with-schema-v2")
-model = AutoModelForSeq2SeqLM.from_pretrained("juierror/flan-t5-text2sql-with-schema-v2")
+# --- 1. Model Setup (Phi-3.5 via Llama.cpp) ---
+model_name = "bartowski/Phi-3.5-mini-instruct-GGUF"
+model_file = "Phi-3.5-mini-instruct-Q4_K_M.gguf"
 
-""" Formatting Connection String and Creating Engine """
+print(f"Downloading {model_file}...")
+model_path = hf_hub_download(repo_id=model_name, filename=model_file)
+
+# Initialize the Model
+llm = Llama(
+    model_path=model_path,
+    n_ctx=4096,
+    n_gpu_layers=-1, 
+    verbose=False
+)
+
+# --- 2. Database Connection ---
 def getConnection() -> str:
-    # Your raw info
-    user = "postgres"
-    password = "CattieMcWorm" # The '@' and '/' would break a normal string
-    host = "localhost"
+    user = "my463"
+    password = "" 
+    host = "postgres.cs.rutgers.edu"
     port = "5432"
-    dbname = "postgres"
+    dbname = "my463"
 
-    # Encode the password (and user, just to be safe)
     safe_password = urllib.parse.quote_plus(password)
     safe_user = urllib.parse.quote_plus(user)
 
-    # Construct the string
     return f"postgresql+psycopg2://{safe_user}:{safe_password}@{host}:{port}/{dbname}"
 
-# Here's the engine
 engine = create_engine(getConnection())
 
-""" Extracting Schema """
+# --- 3. Extracting Schema (Updated Format) ---
 def getSchema() -> str:
-    # Create an inspector
     inspector = inspect(engine)
-
-    # Get Table Names
     table_names = inspector.get_table_names()
-
-    # Stores Schema
     schema = ""
 
-    # Format Schema String
     for table in table_names:
-        schema += (str(table) + "(")
-        # Goes through columns
-        col_str = ""
-        for col in inspector.get_columns(table):
-            col_str += (str(col['name']) + ", ")
-        schema += (col_str[:len(col_str)-2] + "), ")
-    return schema[:len(schema)-2]
+        # Start the CREATE TABLE statement
+        schema += f"CREATE TABLE {table} (\n"
+        
+        # Fetch columns and Primary Key constraints
+        columns = inspector.get_columns(table)
+        pks = inspector.get_pk_constraint(table).get('constrained_columns', [])
+        
+        col_definitions = []
+        for col in columns:
+            # Format: "column_name COLUMN_TYPE"
+            col_def = f"    {col['name']} {col['type']}"
+            
+            # Append PRIMARY KEY if this column is a PK
+            if col['name'] in pks:
+                col_def += " PRIMARY KEY"
+            
+            col_definitions.append(col_def)
+        
+        # Join columns with commas and newlines
+        schema += ",\n".join(col_definitions)
+        schema += "\n);\n\n"
+        
+    return schema
 
-# Get schema string
-tables = getSchema()
+# Get the formatted schema string
+tables_schema = getSchema()
 
+# --- 4. Generate SQL ---
 def generate_sql(question):
-    # Construct prompt
-    # Strict Format: "convert tables: <tables> question: <question>"
-    prompt = f"convert tables: {tables} question: {question}"
+    # System prompt tailored for SQL generation
+    system_prompt = (
+        "You are an expert SQL assistant. Convert the user's question into a valid SQL query "
+        "based on the provided CREATE TABLE schema. "
+        "Do not explain, just output the SQL."
+    )
     
-    # Generate
-    inputs = tokenizer(prompt, return_tensors="pt")
-    outputs = model.generate(**inputs, max_length=512)
-    return tokenizer.decode(outputs[0], skip_special_tokens=True)
+    # Phi-3.5 Prompt Structure
+    full_prompt = f"""<|system|>
+{system_prompt}<|end|>
+<|user|>
+Schema:
+{tables_schema}
 
-# Get query
-queryStr = generate_sql("Give me all loans in Mercer County")
-print(f"Query String:\n {queryStr}")
+Question: {question}<|end|>
+<|assistant|>
+"""
+    
+    output = llm(
+        full_prompt,
+        max_tokens=200, 
+        stop=["<|end|>", ";"], 
+        echo=False
+    )
+    
+    return output['choices'][0]['text'].strip()
+
+# --- 5. Execution ---
+question = "Give me all loans in Mercer County"
+print(f"Generating SQL for: {question}")
+
+queryStr = generate_sql(question)
+print(f"Query String:\n {queryStr};")
