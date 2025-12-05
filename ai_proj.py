@@ -3,14 +3,17 @@ from sqlalchemy import create_engine, inspect
 from llama_cpp import Llama
 from huggingface_hub import hf_hub_download
 
-# --- 1. Model Setup (Phi-3.5 via Llama.cpp) ---
-model_name = "bartowski/Phi-3.5-mini-instruct-GGUF"
-model_file = "Phi-3.5-mini-instruct-Q4_K_M.gguf"
+# --- 1. Model Setup (Qwen 2.5-3B via Llama.cpp) ---
+# We use the official GGUF repo for Qwen 2.5
+model_name = "Qwen/Qwen2.5-3B-Instruct-GGUF"
+model_file = "qwen2.5-3b-instruct-q4_k_m.gguf"
 
 print(f"Downloading {model_file}...")
 model_path = hf_hub_download(repo_id=model_name, filename=model_file)
 
 # Initialize the Model
+# Qwen 2.5 supports a large context window (up to 32k), 
+# but 4096 or 8192 is usually sufficient for SQL schemas.
 llm = Llama(
     model_path=model_path,
     n_ctx=4096,
@@ -76,21 +79,30 @@ def generate_sql(question):
         "Do not explain, just output the SQL."
     )
     
-    # Phi-3.5 Prompt Structure
-    full_prompt = f"""<|system|>
-{system_prompt}<|end|>
-<|user|>
+    # Qwen 2.5 Uses ChatML Format:
+    # <|im_start|>system
+    # ...
+    # <|im_end|>
+    # <|im_start|>user
+    # ...
+    # <|im_end|>
+    # <|im_start|>assistant
+    
+    full_prompt = f"""<|im_start|>system
+{system_prompt}<|im_end|>
+<|im_start|>user
 Schema:
 {tables_schema}
 
-Question: {question}<|end|>
-<|assistant|>
+Question: {question}<|im_end|>
+<|im_start|>assistant
 """
     
     output = llm(
         full_prompt,
         max_tokens=200, 
-        stop=["<|end|>", ";"], 
+        # Update stop tokens for Qwen
+        stop=["<|im_end|>", ";"], 
         echo=False
     )
     
