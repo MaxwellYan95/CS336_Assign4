@@ -1,0 +1,116 @@
+import sys
+import paramiko
+import getpass
+from llama_cpp import Llama
+from huggingface_hub import hf_hub_download
+
+# --- Configuration ---
+ILAB_HOST = "matrix.cs.rutgers.edu"  # Or your specific machine like 'java.cs.rutgers.edu'
+REMOTE_SCRIPT_PATH = "~/ilab_script.py" # Where you put file #2 on iLab
+DATABASE_FILE = "Database.sql"        # File #3
+FEED_FILE = "FeedValues.sql"        # File #4
+
+# --- 1. Model Setup (Adapted from your ai_proj.py) ---
+model_name = "Qwen/Qwen2.5-3B-Instruct-GGUF"
+model_file = "qwen2.5-3b-instruct-q4_k_m.gguf"
+
+print(f"Downloading/Loading {model_file}...")
+model_path = hf_hub_download(repo_id=model_name, filename=model_file)
+
+llm = Llama(
+    model_path=model_path,
+    n_ctx=4096,
+    n_gpu_layers=-1, 
+    verbose=False
+)
+
+# --- 2. Load Context for the AI ---
+def get_schema_context():
+    schema = ""
+    try:
+        with open(DATABASE_FILE, 'r') as f:
+            schema += (f.read() + "")
+    except FileNotFoundError:
+        print(f"Error: Could not find {DATABASE_FILE}. Make sure it exists locally.")
+        sys.exit(1)
+    try:
+        with open(FEED_FILE, 'r') as f:
+            schema += (f.read() + "")
+    except FileNotFoundError:
+        print(f"Error: Could not find {FEED_FILE}. Make sure it exists locally.")
+        sys.exit(1)
+
+schema_context = get_schema_context()
+
+# --- 3. Generate SQL ---
+def generate_sql(question):
+    system_prompt = (
+        "You are an expert SQL assistant. Convert the user's question into a valid SQL query "
+        "based on the provided schema. Output ONLY the SQL query. Do not use markdown formatting like ```sql."
+    )
+    
+    full_prompt = f"""<|im_start|>system
+{system_prompt}<|im_end|>
+<|im_start|>user
+Schema:
+{schema_context}
+
+Question: {question}<|im_end|>
+<|im_start|>assistant
+"""
+    
+    output = llm(
+        full_prompt,
+        max_tokens=200, 
+        stop=["<|im_end|>", ";"], 
+        echo=False
+    )
+    
+    response_text = output['choices'][0]['text'].strip()
+    # Simple cleanup to remove markdown if the AI adds it
+    cleaned_sql = response_text.replace("```sql", "").replace("```", "").strip()
+    return cleaned_sql
+
+# --- 4. SSH Execution ---
+def execute_on_ilab(sql_query, username, password):
+    try:
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(ILAB_HOST, username=username, password=password)
+        
+        # Escape quotes for the command line
+        safe_query = sql_query.replace('"', '\\"')
+        
+        # Run the remote python script
+        command = f'python3 {REMOTE_SCRIPT_PATH} "{safe_query}"'
+        
+        stdin, stdout, stderr = ssh.exec_command(command)
+        
+        result = stdout.read().decode()
+        error = stderr.read().decode()
+        
+        if error:
+            print(f"\n[Remote Error]: {error}")
+        print(f"\n[Remote Output]:\n{result}")
+        
+        ssh.close()
+    except Exception as e:
+        print(f"SSH Connection Failed: {e}")
+
+# --- 5. Main Loop ---
+if __name__ == "__main__":
+    print("--- Database LLM Client ---")
+    # user = input("Enter iLab Username: ")
+    # pwd = getpass.getpass("Enter iLab Password: ")
+
+    while True:
+        q = input("\nEnter your question (or 'exit'): ")
+        if q.strip().lower() == "exit":
+            break
+            
+        print("Generating SQL...")
+        sql = generate_sql(q)
+        print(f"Generated SQL: {sql}")
+        
+        # print(f"Executing on {ILAB_HOST}...")
+        # execute_on_ilab(sql, user, pwd)
