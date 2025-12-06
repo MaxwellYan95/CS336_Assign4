@@ -5,8 +5,8 @@ from llama_cpp import Llama
 from huggingface_hub import hf_hub_download
 
 # --- Configuration ---
-ILAB_HOST = "matrix.cs.rutgers.edu"  # Or your specific machine like 'java.cs.rutgers.edu'
-REMOTE_SCRIPT_PATH = "~/ilab_script.py" # Where you put file #2 on iLab
+ILAB_HOST = "ilab1.cs.rutgers.edu"  # Or your specific machine like 'java.cs.rutgers.edu'
+REMOTE_SCRIPT_PATH = "/common/home/my463/cs336_Data/project3/ilab_script.py" # Where you put file #2 on iLab
 DATABASE_FILE = "Database.sql"        # File #3
 FEED_FILE = "FeedValues.sql"        # File #4
 
@@ -100,8 +100,8 @@ def execute_on_ilab(sql_query, username, password):
 # --- 5. Main Loop ---
 if __name__ == "__main__":
     print("--- Database LLM Client ---")
-    # user = input("Enter iLab Username: ")
-    # pwd = getpass.getpass("Enter iLab Password: ")
+    user = input("Enter iLab Username: ")
+    pwd = getpass.getpass("Enter iLab Password: ")
 
     while True:
         q = input("\nEnter your question (or 'exit'): ")
@@ -112,5 +112,5 @@ if __name__ == "__main__":
         sql = generate_sql(q)
         print(f"Generated SQL: {sql}")
         
-        # print(f"Executing on {ILAB_HOST}...")
-        # execute_on_ilab(sql, user, pwd)
+        print(f"Executing on {ILAB_HOST}...")
+        execute_on_ilab(sql, user, pwd)
