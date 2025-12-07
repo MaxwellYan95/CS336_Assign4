@@ -170,7 +170,6 @@ INSERT INTO municipal (msamd, msamd_name) VALUES
 INSERT INTO county (state_code, county_code, county_name) VALUES
 (6, 59, 'Orange County'),           -- CA
 (48, 113, 'Dallas County'),         -- TX
-(36, 61, 'New York County'),        -- NY
 (12, 86, 'Miami-Dade County'),      -- FL
 (10, 3, 'New Castle County');       -- DE (for Wilmington)
 
@@ -184,8 +183,6 @@ INSERT INTO location (
 (11244, 6, 59, 1100.01, 5000, 45.5, 95000, 110.5, 1200, 1400),
 -- Dallas - TX
 (19124, 48, 113, 202.00, 3500, 60.0, 78000, 95.0, 800, 1000),
--- New York - NY
-(35614, 36, 61, 7.00, 8000, 25.0, 120000, 150.0, 200, 300),
 -- Miami - FL
 (33124, 12, 86, 15.02, 4200, 75.2, 55000, 80.0, 950, 1100),
 -- Wilmington - DE
@@ -204,9 +201,6 @@ INSERT INTO loan (
 -- Loan 2: Denied, TX, 2021
 (10002, 2021, 'CREDIT02', 5, 1, 1, 3, 1, 250, 3, 3, 2, 1, 5, 2, 5, 45, 0, NULL, 2, 1, 1, 102, 0),
 
--- Loan 3: Withdrawn, NY, 2023
-(10003, 2023, 'BANK001', 2, 1, 3, 2, 2, 1500, 3, 4, 3, 2, 2, 1, 1, 450, 0, NULL, 2, 1, 1, 103, 0),
-
 -- Loan 4: Originated, FL, 2020
 (10004, 2020, 'MORTG03', 7, 2, 1, 1, 1, 300, 3, 1, 4, 1, 1, 2, 1, 65, 2, 1.50, 2, 1, 1, 104, 0),
 
@@ -221,10 +215,6 @@ INSERT INTO applicant_race (PRIMARY_ID, race_code, num, co_applicant) VALUES
 -- Loan 10002: Denied loan
 (10002, 3, 1, FALSE),
 (10002, 8, 1, TRUE),
-
--- Loan 10003: Withdrawn
-(10003, 2, 1, FALSE),
-(10003, 2, 1, TRUE),
 
 -- Loan 10004: Mixed Race
 (10004, 5, 1, FALSE),

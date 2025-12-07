@@ -42,7 +42,6 @@ def get_schema_context():
     return schema
 
 schema_context = get_schema_context()
-print(f"schema: {schema_context}")
 
 # --- 3. Generate SQL ---
 def generate_sql(question):
