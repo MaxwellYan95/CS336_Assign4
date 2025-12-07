@@ -1,0 +1,14 @@
+Type these commands in the local machine terminal
+1) python3.11 -m venv .venv
+2) source .venv/bin/activate
+3) pip install llama-cpp-python huggingface_hub
+4) pip install paramiko
+
+Type these commands in the ilab machine terminal
+1) python3.11 -m venv .venv
+2) source .venv/bin/activate
+3) pip install pandas sqlalchemy psycopg2-binary
+
+HOW TO RUN THE PROGRAM?
+------------------------
+Go to the local machine terminal and type this: python3 ai_proj.py
