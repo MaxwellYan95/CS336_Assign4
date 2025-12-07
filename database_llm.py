@@ -39,14 +39,21 @@ def get_schema_context():
     except FileNotFoundError:
         print(f"Error: Could not find {FEED_FILE}. Make sure it exists locally.")
         sys.exit(1)
+    return schema
 
 schema_context = get_schema_context()
+print(f"schema: {schema_context}")
 
 # --- 3. Generate SQL ---
 def generate_sql(question):
+    # Updated prompt with stricter constraints
     system_prompt = (
-        "You are an expert SQL assistant. Convert the user's question into a valid SQL query "
-        "based on the provided schema. Output ONLY the SQL query. Do not use markdown formatting like ```sql."
+        "You are a strict SQL assistant. Convert the user's question into a valid SQL query "
+        "based ONLY on the provided schema below.\n"
+        "RULES:\n"
+        "1. Use ONLY the table names and columns explicitly defined in the Schema.\n"
+        "2. Do NOT invent table names (like 'some_table') or column names.\n"
+        "3. Output ONLY the SQL query. No markdown formatting, no explanations."
     )
     
     full_prompt = f"""<|im_start|>system
@@ -61,13 +68,12 @@ Question: {question}<|im_end|>
     
     output = llm(
         full_prompt,
-        max_tokens=200, 
+        max_tokens=400, # Increased slightly to prevent cutoff on joins
         stop=["<|im_end|>", ";"], 
         echo=False
     )
     
     response_text = output['choices'][0]['text'].strip()
-    # Simple cleanup to remove markdown if the AI adds it
     cleaned_sql = response_text.replace("```sql", "").replace("```", "").strip()
     return cleaned_sql
 
@@ -78,20 +84,32 @@ def execute_on_ilab(sql_query, username, password):
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(ILAB_HOST, username=username, password=password)
         
-        # Escape quotes for the command line
+        # Escape quotes for the command line to prevent syntax errors
         safe_query = sql_query.replace('"', '\\"')
         
-        # Run the remote python script
-        command = f'python3 {REMOTE_SCRIPT_PATH} "{safe_query}"'
+        # Path to the activate script
+        env_activate_path = "/common/home/my463/cs336_Data/project3/ai_env/bin/activate"
+
+        # COMBINE the commands with '&&' so they run in the SAME session
+        # We use 'bash -c' to ensure 'source' works as expected if the default shell varies
+        full_command = f'source {env_activate_path} && python3 {REMOTE_SCRIPT_PATH} "{safe_query}"'
         
-        stdin, stdout, stderr = ssh.exec_command(command)
+        # Executing just once
+        print(f"Sending command to {ILAB_HOST}...")
+        stdin, stdout, stderr = ssh.exec_command(full_command)
         
+        # Capture output
         result = stdout.read().decode()
         error = stderr.read().decode()
         
         if error:
-            print(f"\n[Remote Error]: {error}")
-        print(f"\n[Remote Output]:\n{result}")
+            # Note: Pandas sometimes prints warnings to stderr, which aren't fatal errors.
+            print(f"\n[Remote Stderr]: {error}")
+            
+        if result:
+            print(f"\n[Remote Output]:\n{result}")
+        else:
+            print("\n[Remote Output]: <No output returned>")
         
         ssh.close()
     except Exception as e:
