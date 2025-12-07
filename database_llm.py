@@ -63,7 +63,7 @@ Schema:
 
 Question: {question}<|im_end|>
 <|im_start|>assistant
-"""
+```sql"""
     
     output = llm(
         full_prompt,
