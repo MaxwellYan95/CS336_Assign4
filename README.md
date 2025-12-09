@@ -4,6 +4,11 @@
 3) Seunghun Tak<br>
 4) Maxwell Yan</body>
 
+<h1>Contributions</h1>
+<body>1) Jesael Soto, Nandakishor Suresh, and Seunghun Tak <br>
+worked on the README<br>
+2) Maxwell Yan worked on the Python program</body>
+
 <h1>What was challenging?</h1>
 <body>Fixing storage errors was a challenge. Originally, I used transformers.<br>
 However, the terminal would always say that there's not enough<br>
