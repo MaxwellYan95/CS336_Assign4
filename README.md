@@ -10,9 +10,9 @@ worked on the README<br>
 2) Maxwell Yan worked on the Python program</body>
 
 <h1>What was challenging?</h1>
-<body>Fixing storage errors was a challenge. Originally, I used transformers.<br>
-However, the terminal would always say that there's not enough<br>
-space. Eventually, I switched to llama-cpp-python which<br>
+<body>Fixing storage errors was a challenge. Originally, I used transformers.
+However, the terminal would always say that there's not enough
+space. Eventually, I switched to llama-cpp-python which
 solved this storage error. </body>
 
 <h1>What was interesting?</h1>
