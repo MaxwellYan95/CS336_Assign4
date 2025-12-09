@@ -5,7 +5,7 @@
 4) Maxwell Yan</body>
 
 <h1>Contributions</h1>
-<body>1) Jesael Soto, Nandakishor Suresh, and Seunghun Tak <br>
+<body>1) Jesael Soto, Nandakishor Suresh, and Seunghun Tak
 worked on the README<br>
 2) Maxwell Yan worked on the Python program</body>
 
