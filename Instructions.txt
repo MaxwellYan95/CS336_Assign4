@@ -9,9 +9,11 @@ Type these commands in the ilab machine terminal
 2) source .venv/bin/activate
 3) pip install pandas sqlalchemy psycopg2-binary
 
+
 HOW TO RUN THE PROGRAM?
 ------------------------
 Go to the local machine terminal and type this: python3 ai_proj.py
+
 
 IMPORTANT NOTES
 ----------------
