@@ -12,3 +12,12 @@ Type these commands in the ilab machine terminal
 HOW TO RUN THE PROGRAM?
 ------------------------
 Go to the local machine terminal and type this: python3 ai_proj.py
+
+IMPORTANT NOTES
+----------------
+1) The path to the ilab_script.py file is located in line 9 of 
+   database_llm.py
+2) Additionally, don't forget to change the environment path 
+   for the ilab. It's located in line 90 of database_llm.py.
+3) Make sure to change the paths for ilab_script.py and the 
+   environment path for ilab
