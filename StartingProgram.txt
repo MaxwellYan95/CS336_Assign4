@@ -12,7 +12,7 @@ Type these commands in the ilab machine terminal
 
 HOW TO RUN THE PROGRAM?
 ------------------------
-Go to the local machine terminal and type this: python3 ai_proj.py
+Go to the local machine terminal and type this: python3 database_llm.py
 
 
 IMPORTANT NOTES

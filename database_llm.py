@@ -10,7 +10,7 @@ REMOTE_SCRIPT_PATH = "/common/home/my463/cs336_Data/project3/ilab_script.py" # W
 DATABASE_FILE = "Database.sql"        # File #3
 FEED_FILE = "FeedValues.sql"        # File #4
 
-# --- 1. Model Setup (Adapted from your ai_proj.py) ---
+# --- 1. Model Setup ---
 model_name = "Qwen/Qwen2.5-3B-Instruct-GGUF"
 model_file = "qwen2.5-3b-instruct-q4_k_m.gguf"
 

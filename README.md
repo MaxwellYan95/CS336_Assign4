@@ -6,7 +6,7 @@
 
 <h1>Contributions</h1>
 <body>1) Jesael Soto, Nandakishor Suresh, and Seunghun Tak
-worked on the README<br>
+worked on the README and tested my program.<br>
 2) Maxwell Yan worked on the Python program</body>
 
 <h1>What was challenging?</h1>
